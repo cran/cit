@@ -1,0 +1,2 @@
+PKG_LIBS=-L/usr/local/lib -lgsl -lgslcblas 
+PKG_CFLAGS=-I/usr/local/include

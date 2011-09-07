@@ -1,0 +1,6 @@
+useDynLib(cit,.registration=TRUE)
+
+export(
+	## add new functions separated by comma when needed
+	cit, plotcit
+)
