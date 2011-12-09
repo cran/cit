@@ -2,7 +2,7 @@
 # Program Name: C_CIT_V5.R
 # Purpose: R frontend of C++ CIT function
 # Programmer: Joshua Millstein
-# Date: 7/19/2011
+# Date: 12/9/2011
 #
 # Input:
 #   L: vector or nxp matrix of genotypes {0,1,2}
@@ -125,10 +125,10 @@ plotcit = function(L, G, T, maxit=50000) {
   par(mfrow=c(2,2),oma=c(1,1,2,1))
 
   boxplot(T~L,xlab="genotype",ylab="T",main=paste(pval_nms[2],"=",round(pvals[2],3)),notch=FALSE)
-  plot(TcL,G,xlab="gene expression",ylab="G",main=paste(pval_nms[3],"=",round(pvals[3],3)))
+  plot(TcL,G,xlab="T|L",ylab="G",main=paste(pval_nms[3],"=",round(pvals[3],3)))
   fit = lm(G ~ TcL,na.action="na.exclude")
   abline(fit$coef[1],fit$coef[2])
-  boxplot(GcT~L,xlab="genotype",ylab="gene expression",main=paste(pval_nms[3],"=",round(pvals[3],3)),notch=FALSE)
+  boxplot(GcT~L,xlab="genotype",ylab="G|T",main=paste(pval_nms[3],"=",round(pvals[3],3)),notch=FALSE)
   boxplot(TcG~L,xlab="genotype",ylab="T|G",main=paste(pval_nms[5],"=",round(pvals[5],3)),notch=FALSE)
   mtext(paste(pval_nms[1],"=",round(pvals[1],3)),side=3,line=0,outer=TRUE)
 
