@@ -1,9 +1,8 @@
-129ab75c558d85181d8bc8806a376ad9 *DESCRIPTION
+583e9fed7408e9f23b3e0c612d438154 *DESCRIPTION
 5e432fee8a271a1165e3bffb70f3df82 *NAMESPACE
-8210649516fc5fe6511e0ff4d60f573e *R/C_CIT_V5.R
-c536dc53c8cd2df3d7b943b97eb8904c *R/zzz.R
-eaa9485f2f4680d3070b9c95c4c96cac *man/cit-package.Rd
-b6bde872b0a182756f2d63beea755884 *man/cit.Rd
+36dc22ffb0bd135e2547f99d035dcd11 *R/C_CIT_V5.R
+5b18e8a362c12c23d04562638d2e3ddd *man/cit-package.Rd
+3d3524b5ee0d2b0a857bbcee54aa238d *man/cit.Rd
 bc4e13d4de40f346f63a9c145b409f2d *man/plotcit.Rd
-d15feeee51da052dcc9b8af1d71f6034 *src/Makevars
+8d00060c8123c33a826d8c8940953f9b *src/Makevars
 a57b7106e2bfa8faafcecd74622943cd *src/cit_v5.cpp
