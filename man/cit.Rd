@@ -37,7 +37,7 @@
   \item{T_index }{column of T used in the test}
   \item{p_cit }{CIT (omnibus) p-value}
   \item{p_TassocL }{component p-value for the test association of T and L.}
-  \item{p_TgvnGassocL }{component p-value for the test association of T and G|L.}
+  \item{p_TassocGgvnL }{component p-value for the test association of T and G|L.}
   \item{p_GassocLgvnT }{component p-value for the test association of G and L|T.}
   \item{p_LindTgvnG }{component p-value for the equivalence test of L ind T|G}
 }

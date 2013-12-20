@@ -112,7 +112,7 @@ plotcit = function(L, G, T, maxit=50000) {
 	   as.integer(ntest), as.integer(maxit));
 
    pvals = rep(NA,5)
-   pval_nms = c("p_CIT", "p_TassocL", "p_T|L~G", "p_G|T~L", "p_T|GindL")
+   pval_nms = c("p_CIT", "p_T~L", "p_T~G|L", "p_G~L|G", "p_LindT|G")
    for(i in 1:5) pvals[i] = tmp[[i+6]]
 
   fit = lm(T ~ as.factor(L),na.action="na.exclude")
