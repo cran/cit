@@ -26,6 +26,15 @@ void citfun( int *, double *, double *, int *,
 	
 double gsl_stats_tss (const double data[], size_t stride, size_t n);
 
+int randwrapper( int n );
+
+int randwrapper( int n ) {
+
+	int x ;
+	x = (int)(n * unif_rand() );
+	return x;
+
+}
 
 void citfun( int *L, double *G, double *T, int *nrow, 
 	int *ncol, int *triosv, double *pval, double *pval1, double *pval2, double *pval3, double *pval4, int *ntest, int *maxit )
@@ -61,6 +70,8 @@ void citfun( int *L, double *G, double *T, int *nrow,
 	LL.resize( *nrow );
 	GG.resize( *nrow );
 	TT.resize( *nrow );
+	
+	GetRNGstate();
 	
 	for(rw = 0; rw < *nrow; rw++) {
 		LL[rw].resize( *ncol );
@@ -273,7 +284,7 @@ void citfun( int *L, double *G, double *T, int *nrow,
 		npos = 0;
 		for(i = 0; i < firstloop; i++){
 			// randomly permute residuals
-			random_shuffle( gresid.begin(), gresid.end() );
+			random_shuffle( gresid.begin(), gresid.end(), randwrapper );
 			
 			// compute G* based on marginal L effects and permuted residuals
 			for(rw = 0; rw < nobs; rw++) {
@@ -332,7 +343,7 @@ void citfun( int *L, double *G, double *T, int *nrow,
 			while(aa && cc) {
 				
 				// randomly permute residuals
-				random_shuffle( gresid.begin(), gresid.end() );
+				random_shuffle( gresid.begin(), gresid.end(), randwrapper );
 				
 				// compute G* based on marginal L effects and permuted residuals
 				for(rw = 0; rw < nobs; rw++) {
@@ -402,6 +413,7 @@ void citfun( int *L, double *G, double *T, int *nrow,
 		gsl_vector_free (Gp);
 		
 	} // End tst loop
+	PutRNGstate();
 	trios.clear();
 	LL.clear();
 	GG.clear();

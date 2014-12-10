@@ -11,8 +11,8 @@ This package implements a formal statistical hypothesis test, resulting in a p-v
 \tabular{ll}{
 Package: \tab cit\cr
 Type: \tab Package\cr
-Version: \tab 1.2\cr
-Date: \tab 2013-12-19\cr
+Version: \tab 1.3\cr
+Date: \tab 2014-12-9\cr
 License: \tab Artistic-2.0\cr
 LazyLoad: \tab yes\cr
 }
