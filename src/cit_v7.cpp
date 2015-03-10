@@ -40,8 +40,8 @@ void citfun( int *L, double *G, double *T, int *nrow,
 	int *ncol, int *triosv, double *pval, double *pval1, double *pval2, double *pval3, double *pval4, int *ntest, int *maxit )
 {
 	int tst, lind, gind, tind, rw, cl, alleles, i, 
-		rind, cind, a1, a2, df1, df2, nobs, nvars, ip, npos,nperm;
-	double rss, rss1, rss2, rss3, rss4, rss5, tss, F, Fp, 
+		rind, cind,  df1, df2, nobs, nvars, ip, npos,nperm;
+	double rss, rss1, rss2, rss3, rss4, rss5, tss, F, Fp, a1, a2,
 		pv, tmp, rhs, maxp, testval;
 	bool aa, bb, cc, dd;
 	const int firstloop = 1000;
@@ -129,10 +129,10 @@ void citfun( int *L, double *G, double *T, int *nrow,
 			if(aa && bb && cc) {
 				// Code SNP {0,1,2} input variable L as 2 codominant indicator variables.
 				if(alleles == 2) {
-					a1 = 0;
-					a2 = 0;
-					if(LL[rw][lind] == 1) a1 = 1;
-					if(LL[rw][lind] > 0) a2 = 1;
+					a1 = 0.;
+					a2 = 0.;
+					if(LL[rw][lind] == 1) a1 = 1.;
+					if(LL[rw][lind] > 0) a2 = 1.;
 					gsl_matrix_set(Lm, rind, 0, 1.0);  // intercept
 					gsl_matrix_set(Lm, rind, 1, a1);
 					gsl_matrix_set(Lm, rind, 2, a2);

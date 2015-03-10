@@ -12,7 +12,7 @@ This package implements a formal statistical hypothesis test, resulting in a p-v
 Package: \tab cit\cr
 Type: \tab Package\cr
 Version: \tab 1.3\cr
-Date: \tab 2014-12-9\cr
+Date: \tab 2015-2-6\cr
 License: \tab Artistic-2.0\cr
 LazyLoad: \tab yes\cr
 }
