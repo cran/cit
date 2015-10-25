@@ -2,5 +2,7 @@ useDynLib(cit,.registration=TRUE)
 
 export(
 	## add new functions separated by comma when needed
-	cit, plotcit
+	linreg, cit.cp, cit.bp, fdr.od, fdr.cit, iuq
 )
+
+importFrom("stats", "anova", "glm", "lm", "na.exclude", "pf", "pnorm", "qnorm", "resid", "sd", "var")
