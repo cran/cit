@@ -65,6 +65,16 @@ cit.cp = function( L, G, T, C=NULL, n.resampl=50, n.perm=0, rseed=NULL ){
 	} else {
 	   L = as.data.frame( as.matrix(L) )
 	}
+	if(is.vector(G)) {
+	   G = as.data.frame( matrix( G, ncol=1) )
+	} else {
+	   G = as.data.frame( as.matrix(G) )
+	}
+	if(is.vector(T)) {
+	   T = as.data.frame( matrix( T, ncol=1) )
+	} else {
+	   T = as.data.frame( as.matrix(T) )
+	}
 	if( !is.null(C) ){
 		if(is.vector(C)) {
 	   		C = as.data.frame( matrix( C, ncol=1) )
@@ -117,13 +127,13 @@ cit.cp = function( L, G, T, C=NULL, n.resampl=50, n.perm=0, rseed=NULL ){
 
    vrs.1 = paste( L.nms, collapse="+" )
    formula1 = paste( "G ~ ", vrs.1, sep="")
-   fitG = lm( formula1, data=mydat)
+   fitG = lm( formula1, data=mydat, na.action=na.exclude)
 
    coef.g = rep(NA, length(L.nms) + 1)
    coef.g[ 1 ] = summary(fitG)$coefficients["(Intercept)",1]
    for( i in 1:length(L.nms) ) coef.g[ i + 1 ] = summary(fitG)$coefficients[ L.nms[ i ],1]
 
-   mydat[, "G.r"] = resid(fitG)  
+   mydat[, "G.r"] = resid(fitG)   
 
    fvecr = rep(NA,n.resampl)
    

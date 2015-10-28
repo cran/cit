@@ -11,8 +11,8 @@ This package implements a formal statistical hypothesis test for causal mediatio
 \tabular{ll}{
 Package: \tab cit\cr
 Type: \tab Package\cr
-Version: \tab 1.5\cr
-Date: \tab 2015-9-5\cr
+Version: \tab 1.7\cr
+Date: \tab 2015-10-26\cr
 License: \tab Artistic-2.0\cr
 LazyLoad: \tab yes\cr
 }
