@@ -57,7 +57,9 @@ linreg = function( nms.full, nms.redu=NULL, nm.y, mydat ){
 cit.cp = function( L, G, T, C=NULL, n.resampl=50, n.perm=0, rseed=NULL ){
    
    if( n.resampl < n.perm ) n.resampl = n.perm
-   mydat = as.data.frame(cbind( L, G, T, C ))
+   if( !is.null(C) ){
+      mydat = as.data.frame(cbind( L, G, T, C ))
+   } else mydat = as.data.frame(cbind( L, G, T ))
    for( i in 1:ncol(mydat) ) mydat[, i ] = as.numeric( mydat[, i ]  )
    
    if(is.vector(L)) {
