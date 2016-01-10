@@ -1,7 +1,7 @@
-eed809e390e5c009eff94a454bf2a77f *DESCRIPTION
+554df4ca708d2e050d8722e16955a954 *DESCRIPTION
 5e6369601abcc6dce6dfd358015e700e *NAMESPACE
 cd23f3b67802927dbf1deb25539b0f34 *R/C_CIT_V12.R
-b5a5330d2086197d4a645bf6bc97ba3d *man/cit-package.Rd
+260d909ca12ebfaefbc7ce49cd5fa752 *man/cit-package.Rd
 6afd67e86d86b0bc26e78a28673ba598 *man/cit.bp.Rd
 0ab8533bc04ceacd60cf100b1b315806 *man/cit.cp.Rd
 4cea77f941fc3c2e296634ca1005bccc *man/fdr.cit.Rd
@@ -9,6 +9,7 @@ b5a5330d2086197d4a645bf6bc97ba3d *man/cit-package.Rd
 3b2630a2af7cc5deb8f64f7e4f2a3a85 *man/iuq.Rd
 ae62bfb897a059633744c6bc58db77b2 *man/linreg.Rd
 d15feeee51da052dcc9b8af1d71f6034 *src/Makevars
+4fac8eb9bdf05e9eb0d3646e789dc9c1 *src/Makevars.win
 599495ea2eb4c2996c5e7b5b16ed75a9 *src/citconlog2_perm_v5.cpp
 f6db04d81f953b7a209c144bf6b3cd63 *src/citconlog2_v3.cpp
 43cdc9cbf3036c611a2bc4f9f4557792 *src/citconlog2cvr_v3.cpp
