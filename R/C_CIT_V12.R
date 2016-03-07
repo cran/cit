@@ -1,8 +1,8 @@
 ######################################################################
-# Program Name: C_CIT_V10.R
-# Purpose: R frontend of C++ CIT function
+# Program Name: C_CIT_V12.R
+# Purpose: R frontend of C++ CIT functions
 # Programmer: Joshua Millstein
-# Date: 6/29/15
+# Date: 3/4/16
 #
 # Input:
 #   L: vector or nxp matrix of continuous instrumental variables
@@ -14,8 +14,6 @@
 #          indicator for the column in L, the second is an indicator for the column in G, and the third
 #          is an indicator for the column in T.
 #
-# dyn.load( paste("citconlog2_v3", .Platform$dynlib.ext, sep = "") )
-
 # Updates: 1) single continuous instrumental double variable, L, or 2) multiple instrumental double variables submitted by a matrix, L, of doubles, assuming that number of columns of L is equal to the number of L variables.
 # If trios == NULL, then L is matrix of instrumental variables to be simultaneously included in the model, o.w. L is matrix where a single variable will be indicated by each row of trios.
 
@@ -133,7 +131,13 @@ cit.cp = function( L, G, T, C=NULL, n.resampl=50, n.perm=0, rseed=NULL ){
 
    coef.g = rep(NA, length(L.nms) + 1)
    coef.g[ 1 ] = summary(fitG)$coefficients["(Intercept)",1]
-   for( i in 1:length(L.nms) ) coef.g[ i + 1 ] = summary(fitG)$coefficients[ L.nms[ i ],1]
+   #for( i in 1:length(L.nms) ) coef.g[ i + 1 ] = summary(fitG)$coefficients[ L.nms[ i ],1]
+   
+   for( i in 1:length(L.nms) ) {
+      tmp = try( summary(fitG)$coefficients[ L.nms[ i ],1], silent = TRUE )
+      tmp = strsplit( as.character( tmp ), " ", fixed=TRUE )[[ 1 ]]
+      coef.g[ i + 1 ] = ifelse( length( tmp ) == 1, as.numeric(tmp), 0 )
+   } # End L.nms loop
 
    mydat[, "G.r"] = resid(fitG)   
 
@@ -288,7 +292,7 @@ cit.cp = function( L, G, T, C=NULL, n.resampl=50, n.perm=0, rseed=NULL ){
 #          indicator for the column in L, the second is an indicator for the column in G, and the third
 #          is an indicator for the column in T. If trios not equal to NULL, then L, G, and T must be matrices or dataframes all of the same dimensions.
 
-cit.bp = function(L, G, T, C=NULL, maxit=10000, n.perm=0, rseed=NULL ) {
+cit.bp = function( L, G, T, C=NULL, maxit=10000, n.perm=0, rseed=NULL ) {
 	
 	permit=1000
 	
@@ -375,8 +379,9 @@ cit.bp = function(L, G, T, C=NULL, maxit=10000, n.perm=0, rseed=NULL ) {
          ncol = dim(L)[2]
 		
 		if( is.null(C) & is.null(rseed) ){
+
 			# here permutations are not the same between multiple omnibus tests, so algorithm is slightly more computationally efficient.
-         	tmp = .C("citconlog2p", as.double(L), as.double(G), as.double(T), as.integer(nrow), 
+         	tmp = .C("citconlog3p", as.double(L), as.double(G), as.double(T), as.integer(nrow), 
             		as.integer(ncol), as.double(pval1), as.double(pval2), as.double(pval3), as.double(pval4),
             		as.integer(maxit), as.integer(permit), as.integer(n.perm));
 			startind = 3
@@ -409,7 +414,7 @@ cit.bp = function(L, G, T, C=NULL, maxit=10000, n.perm=0, rseed=NULL ) {
 
 # fdr function w/ overdispersion parameter
 # In order to make CIs estimable, use the conservative approximation that at least 1 positve test was observed among permuted
-fdr.od = function (obsp, permp, pnm, ntests, thres, cl = 0.95, c1 = NA) {
+fdr.od = function ( obsp, permp, pnm, ntests, thres, cl = 0.95, od = NA ) {
     z_ = qnorm(1 - (1 - cl)/2)
     pcount = rep(NA, length(permp))
     for (p_ in 1:length(permp)) {
@@ -420,13 +425,13 @@ fdr.od = function (obsp, permp, pnm, ntests, thres, cl = 0.95, c1 = NA) {
     p = mean(pcount, na.rm = TRUE)/ntests
     e_vr = ntests * p * (1 - p)
     o_vr = var(pcount, na.rm = TRUE)
-    if (is.na(c1)) {
-        c1 = o_vr/e_vr
-        if (!is.na(c1)) 
-            if (c1 < 1) 
-                c1 = 1
+    if (is.na(od)) {
+        od = o_vr/e_vr
+        if (!is.na(od)) 
+            if (od < 1) 
+                od = 1
     }
-    if (is.na(c1)) c1 = 1
+    if (is.na(od)) od = 1
     nperm = length(permp)
     mo = ntests
     ro = sum(obsp <= thres)
@@ -440,15 +445,17 @@ fdr.od = function (obsp, permp, pnm, ntests, thres, cl = 0.95, c1 = NA) {
         prod1 = vp/(mp - vp)
         prod2 = mo/ro - 1
         fdr = prod1 * prod2
+        
         t1var = mp/(vp * (mp - vp))
         t2var = mo/(ro * (mo - ro))
-        evar_jm = (t1var + t2var) * c1
+        evar_jm = (t1var + t2var) * od
         ul = exp(log(fdr) + z_ * sqrt(evar_jm))
         ll = exp(log(fdr) - z_ * sqrt(evar_jm))
+        
         pi0 = (mo - ro)/(mo - (vp/nperm))
         rslt = c(fdr, ll, ul, pi0)
         rslt = ifelse(rslt > 1, 1, rslt)
-        rslt = c(rslt, c1, ro, vp1)
+        rslt = c(rslt, od, ro, vp1)
         names(rslt) = c( "fdr", "fdr.ll", "fdr.ul", "pi.0", "od", "s.obs", "s.perm" )
     }
     return(rslt)
@@ -491,7 +498,7 @@ fdr.cit = function( cit.perm.list, cl=.95, c1=NA ){
 	pnm.lst[[ 3 ]] = c("q.GaLgvT", "q.ll.GaLgvT", "q.ul.GaLgvT")
 	pnm.lst[[ 4 ]] = c("q.LiTgvG", "q.ll.LiTgvG", "q.ul.LiTgvG")
 	fdrmat = as.data.frame( matrix( NA, nrow=0, ncol=16 ) )
-	names( fdrmat ) = c( "p.raw", "q.cit", "q.cit.ll", "q.cit.ul",
+	names( fdrmat ) = c( "p.raw", "q.cit", "q.ll.cit", "q.ul.cit",
 		pnm.lst[[ 1 ]], pnm.lst[[ 2 ]], pnm.lst[[ 3 ]], pnm.lst[[ 4 ]] )
 
 	for( tst in 1:nrow(obs) ){
@@ -501,13 +508,13 @@ fdr.cit = function( cit.perm.list, cl=.95, c1=NA ){
 			cutoff = ifelse( is.na(cutoff), 1, cutoff )
 			cutoff = ifelse( is.null(cutoff), 1, cutoff )
 			if( cutoff < 1){
-				fdrmat[ tst, pnm.lst[[ pind ]]  ] = fdr.od(obs[, pname], perml, pname, nrow(obs), cutoff, cl=cl, c1=c1)[ 1:3 ]
+				fdrmat[ tst, pnm.lst[[ pind ]]  ] = fdr.od(obs[, pname], perml, pname, nrow(obs), cutoff, cl=cl, od=c1)[ 1:3 ]
 			} else fdrmat[ tst, pnm.lst[[ pind ]]  ] = c(1,1,1) 
 		}
 		fdrmat[ tst, "p.raw"  ] = obs[ tst, "p_cit" ]
 		fdrmat[ tst, "q.cit"  ] = iuq( fdrmat[ tst, c( "q.TaL", "q.TaGgvL", "q.GaLgvT", "q.LiTgvG" ) ] )
-		fdrmat[ tst, "q.cit.ll"  ] = iuq( fdrmat[ tst, c( "q.ll.TaL", "q.ll.TaGgvL", "q.ll.GaLgvT", "q.ll.LiTgvG" ) ] )
-		fdrmat[ tst, "q.cit.ul"  ] = iuq( fdrmat[ tst, c( "q.ul.TaL", "q.ul.TaGgvL", "q.ul.GaLgvT", "q.ul.LiTgvG" ) ] )
+		fdrmat[ tst, "q.ll.cit"  ] = iuq( fdrmat[ tst, c( "q.ll.TaL", "q.ll.TaGgvL", "q.ll.GaLgvT", "q.ll.LiTgvG" ) ] )
+		fdrmat[ tst, "q.ul.cit"  ] = iuq( fdrmat[ tst, c( "q.ul.TaL", "q.ul.TaGgvL", "q.ul.GaLgvT", "q.ul.LiTgvG" ) ] )
 	}
 	return( fdrmat )
 } # End fdr.cit

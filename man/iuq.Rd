@@ -20,7 +20,7 @@ iuq( qvec )
   A single value that represents the rate at which tests called 'significant' at the specified omnibus q-value include at least one component condition that is called 'significant' due to chance alone.
 }
 \references{
- Millstein J, Zhang B, Zhu J, Schadt EE. 2009. Disentangling molecular relationships with a causal inference test. BMC Genetics, 10:23.
+ Millstein J, Chen GK, Breton CV. 2016. cit: hypothesis testing software for mediation analysis in genomic applications. Bioinformatics.
 }
 \author{
   Joshua Millstein

@@ -41,6 +41,7 @@ void citconlog3p( double *L, double *G, double *T, int &nrow, int &ncol,
 	double *pval1, double *pval2, double *pval3, double *pval4, 
 	int &maxit, int &permit, int &boots )
 {
+
 	int rw, brw, cl, i, j, rind, df, df1, df2, npos, nperm, dncol, perm, firstloop;
 	int *bootind, *nposperm;
 	double rss2, rss3, rss5, F, pv, pvalind, pvp, tmp, rhs;
@@ -68,6 +69,7 @@ void citconlog3p( double *L, double *G, double *T, int &nrow, int &ncol,
     
 	LL.resize( nrow );
 	GetRNGstate();
+	permindvec.resize( nrow ); 
 	
 	for(rw = 0; rw < nrow; rw++) {
 		LL[rw].resize( ncol );	
@@ -79,10 +81,10 @@ void citconlog3p( double *L, double *G, double *T, int &nrow, int &ncol,
 		}
 	}
 	
-	for(rw = 0; rw < nrow; rw++) { 
+	for(rw = 0; rw < nrow; rw++) { 	
 		permindvec[ rw ] = rw;
 	}
-	
+
 	// begin permutation loop	
 	for(perm = 0; perm < (boots + 1); perm++) {
 	
@@ -112,7 +114,7 @@ void citconlog3p( double *L, double *G, double *T, int &nrow, int &ncol,
 				rind++;
 			} // end if aa
 		} // end for rw
-		
+	
 		df = ncol;
 		converged = logisticReg( pv, phenovec, designmat, rind, dncol, df );
 		pv = ( converged ) ? pv : 9;

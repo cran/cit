@@ -23,17 +23,30 @@
 }
 \details{
   For the initial cit.cp and cit.bp test computations, we suggest setting n.perm to 100 or greater for moderate numbers of tests, say 10s or 100s. Larger numbers of permutations will generate more precise FDR estimates but require substantial computation time. If a large number of tests, say 1000s, have been conducted, then n.perm can be as small as 10 and still generate good FDR estimates and confidence intervals. FDR confidence intervals are especially useful to quantify uncertainty when FDR value > 0.05. The over-dispersion parameter should be set to one if it is known that all tests are independent, however, this is rarely the case in typical multiple testing settings. The fdr.cit function can also be used with simulated data in order to generate power calculations. In this case the over-dispersion parameter may be estimated from pilot data or other datasets and fixed to the prior estimate using the c1 argument. The omnibus CIT FDR value is generated as the maximum FDR across the four component tests, in an intesection-union type of approach analogous to the method used to generate the omnibus CIT p-value in cit.cp and cit.bp.
+  
+  It is important to be aware that there are certain conditions under which this permutation-based FDR is not stable. This includes the case where all observed tests achieve the significance level and the case where there are zero positive tests among the permuted results. In the latter case, we take the conservative approach of setting the number of positive permutation tests to one. Both these cases produce an NA for the upper confidence limit. The latter problem may be alleviated by increasing the number of permutations conducted.
 }
 \value{
   A dataframe which includes the following columns:
-  \item{ perm }{Indicator for permutation results. Zero indicates that the data were not permuted and subsequent rows include an integer greater than zero for each permutation conducted.}
-  \item{p_cit }{CIT (omnibus) p-value}
-  \item{p_TassocL }{component p-value for the test of association between T and L.}
-  \item{p_TassocGgvnL }{component p-value for the test of association between T and G|L.}
-  \item{p_GassocLgvnT }{component p-value for the test of association between G and L|T.}
-  \item{p_LindTgvnG }{component p-value for the equivalence test of L ind T|G}
+  \item{p.raw }{CIT (omnibus intersection/union test, IUT) p-value, max of component p-values}
+  \item{q.cit }{CIT (omnibus FDR intersection/union test, IUT) q-value, permutation-based FDR, function of component test FDR values}
+  \item{testing1 }{Lower 95 percent confidence limit (if cl=.95) for q.cit estimate}
+  \item{q.ul.cit }{Upper 95 percent confidence limit (if cl=.95) for q.cit estimate}
+  \item{q.TaL }{component q-value (FDR) for the test of association between T and L}
+  \item{q.ll.TaL }{Lower 95 percent confidence limit (if cl=.95) for q.TaL estimate}
+  \item{q.ul.TaL }{Upper 95 percent confidence limit (if cl=.95) for q.TaL estimate}
+  \item{q.TaGgvL }{component q-value (FDR) for the test of association between T and G|L}
+  \item{q.ll.TaGgvL }{Lower 95 percent confidence limit (if cl=.95) for q.TaGgvL estimate}
+  \item{q.ul.TaGgvL }{Upper 95 percent confidence limit (if cl=.95) for q.TaGgvL estimate}
+  \item{q.GaLgvT }{component q-value (FDR) for the test of association between G and L|T}
+  \item{q.ll.GaLgvT }{Lower 95 percent confidence limit (if cl=.95) for q.GaLgvT estimate}
+  \item{q.ul.GaLgvT }{Upper 95 percent confidence limit (if cl=.95) for q.GaLgvT estimate}
+  \item{q.LiTgvG }{component q-value (FDR) for the equivalence test of L ind T|G}
+  \item{q.ll.LiTgvG }{Lower 95 percent confidence limit (if cl=.95) for the equivalence test of L ind T|G}
+  \item{q.ul.LiTgvG }{Upper 95 percent confidence limit (if cl=.95) for the equivalence test of L ind T|G}
 }
 \references{
+ Millstein J, Chen GK, Breton CV. 2016. cit: hypothesis testing software for mediation analysis in genomic applications. Bioinformatics.
  Millstein J, Volfson D. 2013. Computationally efficient permutation-based confidence interval estimation for tail-area FDR. Frontiers in Genetics | Statistical Genetics and Methodology 4(179):1-11.
 }
 \author{
