@@ -1,8 +1,8 @@
 ######################################################################
-# Program Name: C_CIT_V12.R
-# Purpose: R frontend of C++ CIT functions
+# Program Name: C_CIT_V13.R
+# Purpose: R CIT functions, some including C++ routines
 # Programmer: Joshua Millstein
-# Date: 3/4/16
+# Date: 11/3/16
 #
 # Input:
 #   L: vector or nxp matrix of continuous instrumental variables
@@ -16,7 +16,7 @@
 #
 # Updates: 1) single continuous instrumental double variable, L, or 2) multiple instrumental double variables submitted by a matrix, L, of doubles, assuming that number of columns of L is equal to the number of L variables.
 # If trios == NULL, then L is matrix of instrumental variables to be simultaneously included in the model, o.w. L is matrix where a single variable will be indicated by each row of trios.
-
+# install.packages("/Users/iTeams/Dropbox/scripts/CIT/Rpackage/cit_2.1.tar.gz", repos=NULL)
 ##### Function to compute F test given continuous outcome and full vs reduced sets of covariates
 linreg = function( nms.full, nms.redu=NULL, nm.y, mydat ){
    
@@ -441,18 +441,27 @@ fdr.od = function ( obsp, permp, pnm, ntests, thres, cl = 0.95, od = NA ) {
     if (ro > 0) {
         if (vp == 0) 
             vp = 1
-        mp = nperm * mo
-        prod1 = vp/(mp - vp)
-        prod2 = mo/ro - 1
-        fdr = prod1 * prod2
-        
-        t1var = mp/(vp * (mp - vp))
-        t2var = mo/(ro * (mo - ro))
-        evar_jm = (t1var + t2var) * od
-        ul = exp(log(fdr) + z_ * sqrt(evar_jm))
-        ll = exp(log(fdr) - z_ * sqrt(evar_jm))
-        
+        mean.vp = vp / nperm
+        fdr0 = mean.vp / ro
         pi0 = (mo - ro)/(mo - (vp/nperm))
+        if( is.na(pi0) ) pi0 = 1
+        if( pi0 < 0.5 ) pi0 = 0.5    # updated pi0 to limit its influence
+        if( pi0 > 1 ) pi0 = 1
+        fdr = fdr0 * pi0    # updated calculation of fdr to be robust to ro = mtests
+        
+        # variance of FDR
+        mp = nperm * mo
+        t1 = 1 / vp
+        denom = mp - vp
+        t2 = 1 / denom
+        t3 = 1 / ro
+        denom = ntests - ro
+        if( denom < 1 ) denom = 1
+        t4 = 1 /  denom
+        s2fdr = (t1 + t2 + t3 + t4) * od
+        ul = exp(log(fdr) + z_ * sqrt(s2fdr))
+        ll = exp(log(fdr) - z_ * sqrt(s2fdr))
+        
         rslt = c(fdr, ll, ul, pi0)
         rslt = ifelse(rslt > 1, 1, rslt)
         rslt = c(rslt, od, ro, vp1)
@@ -460,6 +469,34 @@ fdr.od = function ( obsp, permp, pnm, ntests, thres, cl = 0.95, od = NA ) {
     }
     return(rslt)
 } # End fdr.od
+
+
+# Millstein FDR
+fdr.q.para = function( pvals ){
+	# set q.value to minimum FDR for that p-value or larger p-values
+	m = length( pvals )
+	new.order = order(pvals)
+	po = pvals[new.order]
+	qvals = rep(NA, m)
+	for( tst in 1:m ){
+		thresh = po[ tst ]
+		if( thresh > .99 ) qvals[ tst ] = 1
+		if( thresh < 1 ){
+			S = sum( pvals <= thresh )
+			Sp = m * thresh
+			prod1 = Sp / S
+			prod2 = (1 - S/m) / (1 - Sp/m) 
+			prod2 = ifelse(is.na(prod2), .5, prod2)
+			prod2 = ifelse(prod2 < .5, .5, prod2)
+			qvals[ tst ] = prod1 * prod2
+		} # End if thresh
+		qvals[ 1:tst ] = ifelse( qvals[ 1:tst ] > qvals[ tst ], qvals[ tst ], qvals[ 1:tst ] )
+	} # End for tst
+	qvals1 = qvals[order(new.order)]
+	qvals1 = ifelse(qvals1 > 1, 1, qvals1)
+	return( qvals1 )
+} # End fdrpara
+
 
 # function to combine q-values into an omnibus q-value that represents the intersection of alternative hypotheses and the union of null hypotheses
 iuq = function( qvec ){
@@ -469,6 +506,54 @@ iuq = function( qvec ){
 	qval = 1 - tmp
 	return( qval )
 } # End iuq
+
+# wrapper function for fdr.od, gives q-values for input observed and permuted data
+fdr.q.perm = function(obs.p, perml, pname, ntests, cl=.95, od=NA){
+	# set q.value to minimum FDR for that p-value or larger p-values
+	m = length(obs.p)
+	new.order = order(obs.p)
+	po = obs.p[new.order]
+	qvals = rep(NA, m)
+	for( tst in 1:m ){
+		thresh = po[ tst ]
+		thresh = ifelse( is.na(thresh), 1, thresh )
+		thresh = ifelse( is.null(thresh), 1, thresh )
+		if( thresh < 1){
+			qvals[ tst ] = fdr.od(obs.p, perml, pname, ntests, thresh, cl=cl, od=od)[1]
+			qvals[ 1:tst ] = ifelse( qvals[ 1:tst ] > qvals[ tst ], qvals[ tst ], qvals[ 1:tst ] )
+		} else qvals[ tst ] = 1
+	} # End tst loop
+	qvals1 = qvals[order(new.order)]
+	return( qvals1 )
+} # End fdr.q.perm
+
+
+# Millstein FDR (2013) parametric estimator, gives q-values
+fdr.q.para = function( pvals ){
+	# set q.value to minimum FDR for that p-value or larger p-values
+	m = length( pvals )
+	new.order = order(pvals)
+	po = pvals[new.order]
+	qvals = rep(NA, m)
+	for( tst in 1:m ){
+		thresh = po[ tst ]
+		if( thresh > .99 ) qvals[ tst ] = 1
+		if( thresh < 1 ){
+			S = sum( pvals <= thresh )
+			Sp = m * thresh
+			prod1 = Sp / S
+			prod2 = (1 - S/m) / (1 - Sp/m) 
+			prod2 = ifelse(is.na(prod2), .5, prod2)
+			prod2 = ifelse(prod2 < .5, .5, prod2)
+			qvals[ tst ] = prod1 * prod2
+		} # End if thresh
+		qvals[ 1:tst ] = ifelse( qvals[ 1:tst ] > qvals[ tst ], qvals[ tst ], qvals[ 1:tst ] )
+	} # End for tst
+	qvals1 = qvals[order(new.order)]
+	qvals1 = ifelse(qvals1 > 1, 1, qvals1)
+	return( qvals1 )
+} # End fdrpara
+
 
 # compute FDR qvalues from output of cit.bp or cit.cp, organized in a list with each element the output for a specific test
 fdr.cit = function( cit.perm.list, cl=.95, c1=NA ){
@@ -492,29 +577,28 @@ fdr.cit = function( cit.perm.list, cl=.95, c1=NA ){
 		for( pnm in pnms ) perml[[ perm ]][, pnm ] = ifelse( perml[[ perm ]][, pnm ] < 1e-16, 1e-16, perml[[ perm ]][, pnm ] )
 	} 
 	
-	pnm.lst = vector('list', 4 )
-	pnm.lst[[ 1 ]] = c("q.TaL", "q.ll.TaL", "q.ul.TaL")
-	pnm.lst[[ 2 ]] = c("q.TaGgvL", "q.ll.TaGgvL", "q.ul.TaGgvL")
-	pnm.lst[[ 3 ]] = c("q.GaLgvT", "q.ll.GaLgvT", "q.ul.GaLgvT")
-	pnm.lst[[ 4 ]] = c("q.LiTgvG", "q.ll.LiTgvG", "q.ul.LiTgvG")
-	fdrmat = as.data.frame( matrix( NA, nrow=0, ncol=16 ) )
-	names( fdrmat ) = c( "p.raw", "q.cit", "q.ll.cit", "q.ul.cit",
-		pnm.lst[[ 1 ]], pnm.lst[[ 2 ]], pnm.lst[[ 3 ]], pnm.lst[[ 4 ]] )
+	qnms = c( "q.TaL", "q.TaGgvL", "q.GaLgvT", "q.LiTgvG" )
+	mynms = c( "p.raw", "q.cit", qnms )
+	fdrmat = as.data.frame( matrix( NA, nrow=nrow(obs), ncol=length(mynms) ) )
+	names( fdrmat ) = mynms
+	fdrmat[ , "p.raw"  ] = obs[ , "p_cit" ]
 
+	for( pind in 1:3 ) {
+		pname = pnms[ pind ]
+		fdrmat[ , qnms[ pind ]  ] = fdr.q.perm(obs[, pname], perml, pname, ntest, cl=.95, od=1)
+	} # end pind loop
+		
+	# compute q.value for independent test based on Millstein parametric FDR approach
+	#fdrmat[ , "q.TaL"  ] = fdr.q.para( obs[, "p_TassocL" ] )
+	fdrmat[ , "q.LiTgvG"  ] = fdr.q.para( obs[, "p_LindTgvnG" ] )
+	
+	fdrmat[ , "q.LiTgvG"  ] = ifelse( is.na(fdrmat[ , "q.LiTgvG"  ]), 1, fdrmat[ , "q.LiTgvG"  ] )
 	for( tst in 1:nrow(obs) ){
-		for( pind in 1:length(pnms) ) {
-			pname = pnms[ pind ]
-			cutoff = obs[ tst, pname ]
-			cutoff = ifelse( is.na(cutoff), 1, cutoff )
-			cutoff = ifelse( is.null(cutoff), 1, cutoff )
-			if( cutoff < 1){
-				fdrmat[ tst, pnm.lst[[ pind ]]  ] = fdr.od(obs[, pname], perml, pname, nrow(obs), cutoff, cl=cl, od=c1)[ 1:3 ]
-			} else fdrmat[ tst, pnm.lst[[ pind ]]  ] = c(1,1,1) 
-		}
-		fdrmat[ tst, "p.raw"  ] = obs[ tst, "p_cit" ]
 		fdrmat[ tst, "q.cit"  ] = iuq( fdrmat[ tst, c( "q.TaL", "q.TaGgvL", "q.GaLgvT", "q.LiTgvG" ) ] )
-		fdrmat[ tst, "q.ll.cit"  ] = iuq( fdrmat[ tst, c( "q.ll.TaL", "q.ll.TaGgvL", "q.ll.GaLgvT", "q.ll.LiTgvG" ) ] )
-		fdrmat[ tst, "q.ul.cit"  ] = iuq( fdrmat[ tst, c( "q.ul.TaL", "q.ul.TaGgvL", "q.ul.GaLgvT", "q.ul.LiTgvG" ) ] )
-	}
+	} # End tst loop
+	
+	fdrmat[ , pnms  ] = obs[, pnms ]
+	
 	return( fdrmat )
 } # End fdr.cit
+

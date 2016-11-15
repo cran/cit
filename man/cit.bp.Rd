@@ -42,7 +42,7 @@ cit.bp( L, G, T, C=NULL, maxit=10000, n.perm=0, rseed=NULL )
   \item{p_LindTgvnG }{component p-value for the equivalence test of L ind T|G}
 }
 \references{
- Millstein J, Chen GK, Breton CV. 2016. cit: hypothesis testing software for mediation analysis in genomic applications. Bioinformatics.
+ Millstein J, Chen GK, Breton CV. 2016. cit: hypothesis testing software for mediation analysis in genomic applications. Bioinformatics. btw135. PMID: 27153715.
  Millstein J, Zhang B, Zhu J, Schadt EE. 2009. Disentangling molecular relationships with a causal inference test. BMC Genetics, 10:23.
 }
 \author{

@@ -11,8 +11,8 @@ This package implements a formal statistical hypothesis test for causal mediatio
 \tabular{ll}{
 Package: \tab cit\cr
 Type: \tab Package\cr
-Version: \tab 2.0\cr
-Date: \tab 2016-3-7\cr
+Version: \tab 2.1\cr
+Date: \tab 2016-11-14\cr
 License: \tab Artistic-2.0\cr
 LazyLoad: \tab yes\cr
 }
@@ -25,7 +25,7 @@ Maintainer: Joshua Millstein <joshua.millstein@usc.edu>
 Joshua Millstein
 }
 \references{
-Millstein J, Chen GK, Breton CV. 2016. cit: hypothesis testing software for mediation analysis in genomic applications. Bioinformatics.
+Millstein J, Chen GK, Breton CV. 2016. cit: hypothesis testing software for mediation analysis in genomic applications. Bioinformatics. btw135. PMID: 27153715.
 Millstein J, Zhang B, Zhu J, Schadt EE. 2009. Disentangling molecular relationships with a causal inference test. BMC Genetics, 10:23.
 }
 

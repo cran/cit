@@ -30,7 +30,7 @@
   A dataframe which includes the following columns:
   \item{p.raw }{CIT (omnibus intersection/union test, IUT) p-value, max of component p-values}
   \item{q.cit }{CIT (omnibus FDR intersection/union test, IUT) q-value, permutation-based FDR, function of component test FDR values}
-  \item{testing1 }{Lower 95 percent confidence limit (if cl=.95) for q.cit estimate}
+  \item{q.ll.cit }{Lower 95 percent confidence limit (if cl=.95) for q.cit estimate}
   \item{q.ul.cit }{Upper 95 percent confidence limit (if cl=.95) for q.cit estimate}
   \item{q.TaL }{component q-value (FDR) for the test of association between T and L}
   \item{q.ll.TaL }{Lower 95 percent confidence limit (if cl=.95) for q.TaL estimate}
@@ -46,7 +46,7 @@
   \item{q.ul.LiTgvG }{Upper 95 percent confidence limit (if cl=.95) for the equivalence test of L ind T|G}
 }
 \references{
- Millstein J, Chen GK, Breton CV. 2016. cit: hypothesis testing software for mediation analysis in genomic applications. Bioinformatics.
+ Millstein J, Chen GK, Breton CV. 2016. cit: hypothesis testing software for mediation analysis in genomic applications. Bioinformatics. btw135. PMID: 27153715.
  Millstein J, Volfson D. 2013. Computationally efficient permutation-based confidence interval estimation for tail-area FDR. Frontiers in Genetics | Statistical Genetics and Methodology 4(179):1-11.
 }
 \author{

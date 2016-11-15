@@ -36,7 +36,7 @@ fdr.od(obsp, permp, pnm, ntests, thres, cl=.95, od=NA)
 \details{
   If a very large number of tests are conducted, it may be useful to filter results, that is, save only results of those tests that meet some relaxed nominal significance threshold. This alleviates the need to record results for tests that are clearly non-significant. Results from fdr_od() are valid as long as thres < the relaxed nomimal significance threshold for both observed and permuted results. It is not necessary for the input to fdr_od() to be p-values, however, fdr_od() is designed for statistics in which smaller values are more extreme than larger values as is the case for p-values. Therefore, if raw statistics are used, then a transformation may be necessary to insure that smaller values are more likely associated with false null hypotheses than larger values.
   
-  If there are zero positive tests among any of the permuted results (s.perm = 0) at the specified significance threshold (thres), then a conservative approximation is conducted by setting s.perm = 1 for the FDR calculation. This approximation is necessary for the permutation-based FDR to be estimable. This situation can be identified by noting that s.perm = 0 in the output. Increasing the number of permutations conducted may result in positive permutation tests, and thereby overcome the problem.
+  If there are zero positive tests among any of the permuted results (s.perm = 0) at the specified significance threshold (thres), then a conservative approximation is conducted by setting s.perm = 1 for the FDR calculation. This approximation is necessary for the permutation-based FDR to be estimable. This situation can be identified by noting that s.perm = 0 in the output. Increasing the number of permutations conducted may result in positive permutation tests, and thereby overcome the problem. In certain situations, for instance when a large proportion of tests meet the significance threshold, pi0 is estimated to be very small, and thus has a large influence on the FDR estimate. To limit this influence, pi0 is constrained to be .5 or greater, resulting in a more conservative estimate under these conditions. 
 }
 \value{
   A vector which includes:
@@ -49,7 +49,7 @@ fdr.od(obsp, permp, pnm, ntests, thres, cl=.95, od=NA)
   \item{s.perm }{total number of positive tests summed across all permuted result sets}
 }
 \references{
-  Millstein J, Chen GK, Breton CV. 2016. cit: hypothesis testing software for mediation analysis in genomic applications. Bioinformatics.
+  Millstein J, Chen GK, Breton CV. 2016. cit: hypothesis testing software for mediation analysis in genomic applications. Bioinformatics. btw135. PMID: 27153715.
   Millstein J, Volfson D. 2013. Computationally efficient permutation-based confidence interval estimation for tail-area FDR. Frontiers in Genetics | Statistical Genetics and Methodology 4(179):1-11.
 }
 \author{
