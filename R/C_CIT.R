@@ -1,22 +1,22 @@
 ######################################################################
-# Program Name: C_CIT_V13.R
+# Program Name: C_CIT_V13_CI.R
 # Purpose: R CIT functions, some including C++ routines
 # Programmer: Joshua Millstein
-# Date: 11/3/16
+# Date: 12/11/17
 #
 # Input:
 #   L: vector or nxp matrix of continuous instrumental variables
 #   G: vector or nxp matrix of candidate causal mediators.
 #   T: vector or nxp matrix of traits
 #   C: vector or nxp matrix of traits
-#   trios: A matrix or dataframe of three columns. Each row represents a planned test to be conducted 
-#          and the number of rows is equal to the total number of tests. The first column is an
-#          indicator for the column in L, the second is an indicator for the column in G, and the third
-#          is an indicator for the column in T.
+#   perm.index is n x n.perm matrix of random indices for the permutations, e.g., each column is a random permutation 
+#		of 1:n, where n is the number of samples and n.perm the number of permutations. For each permutation, each  
+#		column perm.index will be applied in therandomization approach for each component. Perm.index will preserve the 
+#		observed dependencies between tests in the permuted results allowing more accurate FDR confidence intervals to be computed.
 #
-# Updates: 1) single continuous instrumental double variable, L, or 2) multiple instrumental double variables submitted by a matrix, L, of doubles, assuming that number of columns of L is equal to the number of L variables.
+# Updates: Allow permutation index to be added to allow dependencies between tests to be accounted for.
 # If trios == NULL, then L is matrix of instrumental variables to be simultaneously included in the model, o.w. L is matrix where a single variable will be indicated by each row of trios.
-# install.packages("/Users/iTeams/Dropbox/scripts/CIT/Rpackage/cit_2.1.tar.gz", repos=NULL)
+
 ##### Function to compute F test given continuous outcome and full vs reduced sets of covariates
 linreg = function( nms.full, nms.redu=NULL, nm.y, mydat ){
    
@@ -52,15 +52,26 @@ linreg = function( nms.full, nms.redu=NULL, nm.y, mydat ){
 ## the observed dependencies between tests.
 ##  under the null for test 4 (independence test)
 
-cit.cp = function( L, G, T, C=NULL, n.resampl=50, n.perm=0, rseed=NULL ){
+## perm.index is n x n.perm matrix of random indices for the permutations, e.g., each column is a random permutation 
+##		of 1:n, where n is the number of samples and n.perm the number of permutations. For each permutation, each  
+##		column perm.index will be applied in therandomization approach for each component. Perm.index will preserve the 
+##		observed dependencies between tests in the permuted results allowing more accurate FDR confidence intervals to be computed.
+
+cit.cp = function( L, G, T, C=NULL, n.resampl=50, n.perm=0, perm.index=NULL, rseed=NULL ){
    
+   if( !is.null(perm.index) ){ 
+   	n.perm = ncol(perm.index)
+	perm.index = as.matrix( perm.index )
+   }
    if( n.resampl < n.perm ) n.resampl = n.perm
+   
    if( !is.null(C) ){
       mydat = as.data.frame(cbind( L, G, T, C ))
    } else mydat = as.data.frame(cbind( L, G, T ))
+   
    for( i in 1:ncol(mydat) ) mydat[, i ] = as.numeric( mydat[, i ]  )
    
-   if(is.vector(L)) {
+	if(is.vector(L)) {
 	   L = as.data.frame( matrix( L, ncol=1) )
 	} else {
 	   L = as.data.frame( as.matrix(L) )
@@ -90,6 +101,11 @@ cit.cp = function( L, G, T, C=NULL, n.resampl=50, n.perm=0, rseed=NULL ){
 	if( !is.null(C) ){
 		aa = nrow(C) == nrow(T)
 		if( !aa ) stop( "Error: rows of C must equal rows of T." )
+	}
+	
+	if( is.null(perm.index) ){
+   		perm.index = matrix(NA, nrow=nrow(L), ncol=n.resampl )
+		for( j in 1:ncol(perm.index) ) perm.index[, j] = sample( 1:nrow(L) )
 	}
 	
    L.nms = paste("L", 1:ncol(L), sep="") 
@@ -146,8 +162,12 @@ cit.cp = function( L, G, T, C=NULL, n.resampl=50, n.perm=0, rseed=NULL ){
    set.seed(rseed)
    
    for(rep in 1:n.resampl){
-   
-      nni  = sample( 1:nrow(mydat) ) 
+   	
+	if( rep <= n.perm ){
+      	nni  = perm.index[, rep ]
+      } else {
+      	nni  = sample( 1:nrow(mydat) ) 
+      } 
       
       tmp = rep(0, nrow(mydat) )
       for( i in 1:length(L.nms) ) tmp = tmp + coef.g[ i + 1 ] * mydat[, L.nms[ i ] ]
@@ -166,7 +186,7 @@ cit.cp = function( L, G, T, C=NULL, n.resampl=50, n.perm=0, rseed=NULL ){
       
    } # End rep loop
    
-      #####F Method
+   #####F Method
    fvecr = fvecr[!is.na(fvecr)]
    df1 = anova(fit3,fit5)$Df[2]
    df2 = anova(fit3,fit5)$Res.Df[2]
@@ -186,11 +206,16 @@ cit.cp = function( L, G, T, C=NULL, n.resampl=50, n.perm=0, rseed=NULL ){
    pvals = c( pvalc, pvec )
    names(pvals) = c( "p_cit", "p_TassocL", "p_TassocGgvnL", "p_GassocLgvnT", "p_LindTgvnG")
    
-   if( n.perm > 1 ){
+   if( n.perm > 0 ){
       p.perm.ind = NA
       rep = n.resampl + 1
       	
-      nni  = sample( 1:nrow(mydat) )
+      if( rep <= n.perm ){
+      	nni  = perm.index[, rep ]
+      } else {
+      	nni  = sample( 1:nrow(mydat) ) 
+      } 
+       
       tmp = rep(0, nrow(mydat) )
       for( i in 1:length(L.nms) ) tmp = tmp + coef.g[ i + 1 ] * mydat[, L.nms[ i ] ]
       mydat[, "G.n"] = coef.g[ 1 ] + tmp + mydat[ nni, "G.r"] 
@@ -204,15 +229,11 @@ cit.cp = function( L, G, T, C=NULL, n.resampl=50, n.perm=0, rseed=NULL ){
       formula = paste( tmp, collapse=" + " )
       fit_1 = lm( formula, data=mydat1 )
       fvecr[ rep ] = anova(fit_0,fit_1)$F[2]
- 
-      rand.v = sample( 1:length(fvecr) )
       
       for( perm in 1:n.perm){
-      
-        p.ind = rand.v[ perm ] 
          
-         f.ind = fvecr[ p.ind ]
-         fvecr.p = fvecr[ -p.ind ]
+         f.ind = fvecr[ perm ]
+         fvecr.p = fvecr[ -perm ]
          fncp = mean(fvecr.p,na.rm=TRUE)*(df1/df2)*(df2-df1)-df1
          if(fncp < 0) fncp = 0
 
@@ -245,7 +266,7 @@ cit.cp = function( L, G, T, C=NULL, n.resampl=50, n.perm=0, rseed=NULL ){
 
        for( perm in 1:n.perm){ 
        
-          nni  = sample( 1:nrow(mydat) ) 
+          nni  = perm.index[, perm ] 
           mydat.p = mydat
           
           mydat.p[ , L.nms ] = mydat[ nni , L.nms ]
@@ -282,19 +303,16 @@ cit.cp = function( L, G, T, C=NULL, n.resampl=50, n.perm=0, rseed=NULL ){
 } # End function cit.cp
 
 
-# CIT for binary outcome and permutation results, null is the empirical distribution for pvalues 1-3 and independence for p-value 4.
-# Input:
-#   L: vector or nxp matrix of continuous instrumental variables. If trios not equal to NULL then L includes a single instrumental variable for each test. If trios=NULL then L can be a vector, matrix or dataframe representing just one instrumental variable or alternatively a set of instrumental variables that jointly may be mediated by G.
-#   G: vector or nxp matrix (if trios=NULL then G must be a single variable) of candidate causal mediators.
-#   T: vector or nxp matrix of traits (if trios=NULL then T must be a single variable)
-#   trios: A matrix or dataframe of three columns. Each row represents a planned test to be conducted 
-#          and the number of rows is equal to the total number of tests. The first column is an
-#          indicator for the column in L, the second is an indicator for the column in G, and the third
-#          is an indicator for the column in T. If trios not equal to NULL, then L, G, and T must be matrices or dataframes all of the same dimensions.
+# CIT for binary outcome and permutation results. 
 
-cit.bp = function( L, G, T, C=NULL, maxit=10000, n.perm=0, rseed=NULL ) {
+cit.bp = function( L, G, T, C=NULL, maxit=10000, n.perm=0, perm.index=NULL, rseed=NULL ) {
 	
 	permit=1000
+	
+	if( !is.null(perm.index) ){ 
+		n.perm = ncol(perm.index)
+		perm.index = as.matrix( perm.index )
+	}
 	
 	if(is.vector(L)) {
 	   L = matrix(L,ncol=1)
@@ -340,8 +358,6 @@ cit.bp = function( L, G, T, C=NULL, maxit=10000, n.perm=0, rseed=NULL ) {
 	T = ms_f(T)
 	if( !is.null(C) ) C = ms_f(C)
 	ncolC = ncol(C)
-	
-	bb = n.perm == 0
 
     if( n.perm == 0 ){
       
@@ -369,6 +385,11 @@ cit.bp = function( L, G, T, C=NULL, maxit=10000, n.perm=0, rseed=NULL ) {
          for(i in 1:5) rslts[1,i] = tmp[[i+startind]]
          
      } else {    # End if n.perm == 0
+     
+     		if( is.null(perm.index) ){
+   			perm.index = matrix(NA, nrow=nrow(L), ncol=n.perm )
+			for( j in 1:n.perm ) perm.index[, j] = sample( 1:nrow(L) )
+		}
       
          aa = dim(G)[2] + dim(T)[2] 
          if( aa != 2 ) stop("dim(G)[2] + dim(T)[2]  must equal 2")
@@ -381,21 +402,22 @@ cit.bp = function( L, G, T, C=NULL, maxit=10000, n.perm=0, rseed=NULL ) {
 		if( is.null(C) & is.null(rseed) ){
 
 			# here permutations are not the same between multiple omnibus tests, so algorithm is slightly more computationally efficient.
+
          	tmp = .C("citconlog3p", as.double(L), as.double(G), as.double(T), as.integer(nrow), 
             		as.integer(ncol), as.double(pval1), as.double(pval2), as.double(pval3), as.double(pval4),
-            		as.integer(maxit), as.integer(permit), as.integer(n.perm));
+            		as.integer(maxit), as.integer(permit), as.integer(n.perm), as.integer(perm.index));
 			startind = 3
          } else if( is.null(C) ) {
          	set.seed( rseed )
          	tmp = .C("citconlog3p", as.double(L), as.double(G), as.double(T), as.integer(nrow), 
             		as.integer(ncol), as.double(pval1), as.double(pval2), as.double(pval3), as.double(pval4),
-            		as.integer(maxit), as.integer(permit), as.integer(n.perm));
+            		as.integer(maxit), as.integer(permit), as.integer(n.perm), as.integer(perm.index));
 			startind = 3
 		} else {    	
 			set.seed( rseed )
 			tmp = .C("citconlog3pcvr", as.double(L), as.double(G), as.double(T), as.double(C), as.integer(nrow), 
             		as.integer(ncol), as.integer(ncolC), as.double(pval1), as.double(pval2), as.double(pval3), as.double(pval4),
-            		as.integer(maxit), as.integer(permit), as.integer(n.perm));
+            		as.integer(maxit), as.integer(permit), as.integer(n.perm), as.integer(perm.index));
 			startind = 5
 		} # End else is null covar and perm.imat
 
@@ -469,33 +491,6 @@ fdr.od = function ( obsp, permp, pnm, ntests, thres, cl = 0.95, od = NA ) {
     }
     return(rslt)
 } # End fdr.od
-
-
-# Millstein FDR
-fdr.q.para = function( pvals ){
-	# set q.value to minimum FDR for that p-value or larger p-values
-	m = length( pvals )
-	new.order = order(pvals)
-	po = pvals[new.order]
-	qvals = rep(NA, m)
-	for( tst in 1:m ){
-		thresh = po[ tst ]
-		if( thresh > .99 ) qvals[ tst ] = 1
-		if( thresh < 1 ){
-			S = sum( pvals <= thresh )
-			Sp = m * thresh
-			prod1 = Sp / S
-			prod2 = (1 - S/m) / (1 - Sp/m) 
-			prod2 = ifelse(is.na(prod2), .5, prod2)
-			prod2 = ifelse(prod2 < .5, .5, prod2)
-			qvals[ tst ] = prod1 * prod2
-		} # End if thresh
-		qvals[ 1:tst ] = ifelse( qvals[ 1:tst ] > qvals[ tst ], qvals[ tst ], qvals[ 1:tst ] )
-	} # End for tst
-	qvals1 = qvals[order(new.order)]
-	qvals1 = ifelse(qvals1 > 1, 1, qvals1)
-	return( qvals1 )
-} # End fdrpara
 
 
 # function to combine q-values into an omnibus q-value that represents the intersection of alternative hypotheses and the union of null hypotheses
@@ -577,28 +572,94 @@ fdr.cit = function( cit.perm.list, cl=.95, c1=NA ){
 		for( pnm in pnms ) perml[[ perm ]][, pnm ] = ifelse( perml[[ perm ]][, pnm ] < 1e-16, 1e-16, perml[[ perm ]][, pnm ] )
 	} 
 	
-	qnms = c( "q.TaL", "q.TaGgvL", "q.GaLgvT", "q.LiTgvG" )
-	mynms = c( "p.raw", "q.cit", qnms )
-	fdrmat = as.data.frame( matrix( NA, nrow=nrow(obs), ncol=length(mynms) ) )
-	names( fdrmat ) = mynms
-	fdrmat[ , "p.raw"  ] = obs[ , "p_cit" ]
+	pnm.lst = vector('list', 4 )
+	pnm.lst[[ 1 ]] = c("q.TaL", "q.ll.TaL", "q.ul.TaL")
+	pnm.lst[[ 2 ]] = c("q.TaGgvL", "q.ll.TaGgvL", "q.ul.TaGgvL")
+	pnm.lst[[ 3 ]] = c("q.GaLgvT", "q.ll.GaLgvT", "q.ul.GaLgvT")
+	pnm.lst[[ 4 ]] = c("q.LiTgvG", "q.ll.LiTgvG", "q.ul.LiTgvG")
+	fdrmat = as.data.frame( matrix( NA, nrow=0, ncol=16 ) )
+	names( fdrmat ) = c( "p.cit", "q.cit", "q.cit.ll", "q.cit.ul",
+		pnm.lst[[ 1 ]], pnm.lst[[ 2 ]], pnm.lst[[ 3 ]], pnm.lst[[ 4 ]] )
 
-	for( pind in 1:3 ) {
-		pname = pnms[ pind ]
-		fdrmat[ , qnms[ pind ]  ] = fdr.q.perm(obs[, pname], perml, pname, ntest, cl=.95, od=1)
-	} # end pind loop
-		
-	# compute q.value for independent test based on Millstein parametric FDR approach
-	#fdrmat[ , "q.TaL"  ] = fdr.q.para( obs[, "p_TassocL" ] )
-	fdrmat[ , "q.LiTgvG"  ] = fdr.q.para( obs[, "p_LindTgvnG" ] )
-	
-	fdrmat[ , "q.LiTgvG"  ] = ifelse( is.na(fdrmat[ , "q.LiTgvG"  ]), 1, fdrmat[ , "q.LiTgvG"  ] )
 	for( tst in 1:nrow(obs) ){
-		fdrmat[ tst, "q.cit"  ] = iuq( fdrmat[ tst, c( "q.TaL", "q.TaGgvL", "q.GaLgvT", "q.LiTgvG" ) ] )
-	} # End tst loop
+		for( pind in 1:length(pnms) ) {
+			pname = pnms[ pind ]
+			cutoff = obs[ tst, pname ]
+			cutoff = ifelse( is.na(cutoff), 1, cutoff )
+			cutoff = ifelse( is.null(cutoff), 1, cutoff )
+			if( cutoff < 1){
+				fdrmat[ tst, pnm.lst[[ pind ]]  ] = fdr.od(obs[, pname], perml, pname, nrow(obs), cutoff, cl=cl, od=c1)[ 1:3 ]
+			} else fdrmat[ tst, pnm.lst[[ pind ]]  ] = c(1,1,1) 
+		}
+	}
 	
 	fdrmat[ , pnms  ] = obs[, pnms ]
 	
+	# p_TassocL
+	op = order(fdrmat[ , "p_TassocL" ])
+	for(tst in 1:nrow(fdrmat)){
+		aa = fdrmat[ op[1:tst], "q.TaL" ] > fdrmat[ op[tst], "q.TaL" ]
+		fdrmat[ op[1:tst], "q.TaL" ] = ifelse( aa, fdrmat[ op[tst], "q.TaL" ], fdrmat[ op[1:tst], "q.TaL" ] )
+		fdrmat[ op[1:tst], "q.ll.TaL" ] = ifelse( aa, fdrmat[ op[tst], "q.ll.TaL" ], fdrmat[ op[1:tst], "q.ll.TaL" ] )
+		fdrmat[ op[1:tst], "q.ul.TaL" ] = ifelse( aa, fdrmat[ op[tst], "q.ul.TaL" ], fdrmat[ op[1:tst], "q.ul.TaL" ] )
+	}
+	
+	# p_TassocGgvnL
+	op = order(fdrmat[ , "p_TassocGgvnL" ])
+	for(tst in 1:nrow(fdrmat)){
+		aa = fdrmat[ op[1:tst], "q.TaGgvL" ] > fdrmat[ op[tst], "q.TaGgvL" ]
+		fdrmat[ op[1:tst], "q.TaGgvL" ] = ifelse( aa, fdrmat[ op[tst], "q.TaGgvL" ], fdrmat[ op[1:tst], "q.TaGgvL" ] )
+		fdrmat[ op[1:tst], "q.ll.TaGgvL" ] = ifelse( aa, fdrmat[ op[tst], "q.ll.TaGgvL" ], fdrmat[ op[1:tst], "q.ll.TaGgvL" ] )
+		fdrmat[ op[1:tst], "q.ul.TaGgvL" ] = ifelse( aa, fdrmat[ op[tst], "q.ul.TaGgvL" ], fdrmat[ op[1:tst], "q.ul.TaGgvL" ] )
+	}
+	
+	# p_GassocLgvnT
+	op = order(fdrmat[ , "p_GassocLgvnT" ])
+	for(tst in 1:nrow(fdrmat)){
+		aa = fdrmat[ op[1:tst], "q.GaLgvT" ] > fdrmat[ op[tst], "q.GaLgvT" ]
+		fdrmat[ op[1:tst], "q.GaLgvT" ] = ifelse( aa, fdrmat[ op[tst], "q.GaLgvT" ], fdrmat[ op[1:tst], "q.GaLgvT" ] )
+		fdrmat[ op[1:tst], "q.ll.GaLgvT" ] = ifelse( aa, fdrmat[ op[tst], "q.ll.GaLgvT" ], fdrmat[ op[1:tst], "q.ll.GaLgvT" ] )
+		fdrmat[ op[1:tst], "q.ul.GaLgvT" ] = ifelse( aa, fdrmat[ op[tst], "q.ul.GaLgvT" ], fdrmat[ op[1:tst], "q.ul.GaLgvT" ] )
+	}
+	
+	# p_LindTgvnG
+	op = order(fdrmat[ , "p_LindTgvnG" ])
+	for(tst in 1:nrow(fdrmat)){
+		aa = fdrmat[ op[1:tst], "q.LiTgvG" ] > fdrmat[ op[tst], "q.LiTgvG" ]
+		fdrmat[ op[1:tst], "q.LiTgvG" ] = ifelse( aa, fdrmat[ op[tst], "q.LiTgvG" ], fdrmat[ op[1:tst], "q.LiTgvG" ] )
+		fdrmat[ op[1:tst], "q.ll.LiTgvG" ] = ifelse( aa, fdrmat[ op[tst], "q.ll.LiTgvG" ], fdrmat[ op[1:tst], "q.ll.LiTgvG" ] )
+		fdrmat[ op[1:tst], "q.ul.LiTgvG" ] = ifelse( aa, fdrmat[ op[tst], "q.ul.LiTgvG" ], fdrmat[ op[1:tst], "q.ul.LiTgvG" ] )
+	}
+	
+	# p.cit
+	for( tst in 1:nrow(obs) ){
+		fdrmat[ tst, "p.cit"  ] = obs[ tst, "p_cit" ]
+		fdrmat[ tst, "q.cit"  ] = iuq( fdrmat[ tst, c( "q.TaL", "q.TaGgvL", "q.GaLgvT", "q.LiTgvG" ) ] )
+		fdrmat[ tst, "q.cit.ll"  ] = iuq( fdrmat[ tst, c( "q.ll.TaL", "q.ll.TaGgvL", "q.ll.GaLgvT", "q.ll.LiTgvG" ) ] )
+		fdrmat[ tst, "q.cit.ul"  ] = iuq( fdrmat[ tst, c( "q.ul.TaL", "q.ul.TaGgvL", "q.ul.GaLgvT", "q.ul.LiTgvG" ) ] )
+	}
+	
+	op = order(fdrmat[ , "p.cit" ])
+	for(tst in 1:nrow(fdrmat)){
+		aa = fdrmat[ op[1:tst], "q.cit" ] > fdrmat[ op[tst], "q.cit" ]
+		fdrmat[ op[1:tst], "q.cit" ] = ifelse( aa, fdrmat[ op[tst], "q.cit" ], fdrmat[ op[1:tst], "q.cit" ] )
+		fdrmat[ op[1:tst], "q.cit.ll" ] = ifelse( aa, fdrmat[ op[tst], "q.cit.ll" ], fdrmat[ op[1:tst], "q.cit.ll" ] )
+		fdrmat[ op[1:tst], "q.cit.ul" ] = ifelse( aa, fdrmat[ op[tst], "q.cit.ul" ], fdrmat[ op[1:tst], "q.cit.ul" ] )
+	}
+	
 	return( fdrmat )
 } # End fdr.cit
+
+
+
+
+
+
+
+
+
+
+
+
+
 
