@@ -51,7 +51,7 @@ double * effSizeMat,double * betas,double * invInfoMatrix,uint iObsSampleSize,
 suint stride,suint params,int & count,int MAX){
     chiSq = logL = 0.;
     double *U = new double[params];
-    double *infoMatrix = new double[params*params]; 
+    double *infoMatrix = new double[params*params];
     for(uint j=0;j<params;++j){
         U[ j ] = 0;
     }
@@ -84,6 +84,12 @@ suint stride,suint params,int & count,int MAX){
     }
     double *infoMatDecomp = new double[params*params];
     if (!chDecomp(infoMatrix,infoMatDecomp,params)){
+
+        // Cleaning up
+        delete[] U;
+        delete[] infoMatrix;
+        delete[] infoMatDecomp;
+
         count = MAX;
         return;
     }
@@ -95,6 +101,11 @@ suint stride,suint params,int & count,int MAX){
             chiSq+=1.0*U[i]*invInfoMatrix[col+j]*U[j];
         }
     }
+
+    // Cleaning up
+    delete[] U;
+    delete[] infoMatrix;
+    delete[] infoMatDecomp;
 }
 
 bool fitModel(double & L1,double * phenovec_filtered,double * designmat,double * betas, double * var, int samplesize,int stride, int rank){
@@ -105,7 +116,7 @@ bool fitModel(double & L1,double * phenovec_filtered,double * designmat,double *
   do{
     scoreTest(chiSq,L1,phenovec_filtered,designmat,betas,var,samplesize,stride,rank,count,MAX);
   }while(chiSq>.0001 && count++<MAX);
-  
+
   if (count>=MAX) {
     return false;
   }else{
@@ -121,12 +132,12 @@ bool logisticReg( double & pvalue, double * phenovec_filtered, double * designma
      // input: rank, int variable, no of columns in design matrix
      // input: samplesize, int variable, no rows of design matrix
      // input: df, int variable, no of variables that differ between the reduced and saturated models. It is assumed that the test variables are the last columns in the design matrix.
-        
+
      double L0,L1,dChiSq;
      double *betas = new double[rank];
      double *var = new double[rank*rank];
      bool fitted0, fitted1;
-        
+
      fitted0 = fitModel(L0,phenovec_filtered,designmat_filtered,betas,var,
      samplesize,rank,rank-df);
 
@@ -134,10 +145,23 @@ bool logisticReg( double & pvalue, double * phenovec_filtered, double * designma
      if (fitted0 & fitted1){
        dChiSq = 2.*(L1-L0);
        pvalue = (1.-gsl_cdf_chisq_P(dChiSq,df));
+
+       // Cleaning up
+       delete[] betas;
+       delete[] var;
+
        return true;
-     }else{
-      return false;
+
+     } else {
+
+       // Cleaning up
+       delete[] betas;
+       delete[] var;
+
+       return false;
+
     }
+
 }
 
 
