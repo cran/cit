@@ -8,6 +8,7 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_cdf.h>
 #include <iostream>
+#include <random> 
 
 #include "logisticfunc.h"
 
@@ -55,6 +56,7 @@ void citconlog3p( double *L, double *G, double *T, int &nrow, int &ncol,
 	vector<double> permindvec;
 	gsl_matrix *cov, *X;
 	gsl_vector *Gm, *Gp, *c;
+	unsigned se = 10;
 
 	bootind = new int[nrow];
 	nposperm = new int[boots];
@@ -411,7 +413,7 @@ void citconlog3p( double *L, double *G, double *T, int &nrow, int &ncol,
 	npos = 0;
 	for(i = 0; i < firstloop; i++){
 		// randomly permute residuals
-		random_shuffle( gresid.begin(), gresid.end(), randwrapper3 );
+		shuffle( gresid.begin(), gresid.end(), std::default_random_engine(se) );	
 		for(rw = 0; rw < nrow; rw++) {
 			brw = bootind[ rw ];
 			aa = 1;
@@ -465,7 +467,7 @@ void citconlog3p( double *L, double *G, double *T, int &nrow, int &ncol,
 		while(aa && bb) {
 
 			// randomly permute residuals
-			random_shuffle( gresid.begin(), gresid.end(), randwrapper3 );
+			shuffle( gresid.begin(), gresid.end(), std::default_random_engine(se) );	
 			for(rw = 0; rw < nrow; rw++) {
 				brw = bootind[ rw ];
 				aa = 1;

@@ -8,6 +8,7 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_cdf.h>
 #include <iostream>
+#include <random> 
 
 #include "logisticfunc.h"
 
@@ -57,6 +58,7 @@ void citconlog2cvr( double *L, double *G, double *T, double *C, int &nrow, int &
 	vector<double> gresid;
 	gsl_matrix *Lm, *cov, *X, *Cm;
 	gsl_vector *Gm, *Tm, *Gp, *c;
+	unsigned se = 10;
 
 	designmat = new double[nrow * (ncol + ncolc + 2)];
 	phenovec = new double[nrow];
@@ -259,7 +261,7 @@ void citconlog2cvr( double *L, double *G, double *T, double *C, int &nrow, int &
 		npos = 0;
 		for(i = 0; i < firstloop; i++){
 			// randomly permute residuals
-			random_shuffle( gresid.begin(), gresid.end(), randwrapper1a );
+			shuffle( gresid.begin(), gresid.end(), std::default_random_engine(se) );	
 
 			// compute G* based on marginal L effects and permuted residuals
 			for(rw = 0; rw < nobs; rw++) {
@@ -300,7 +302,7 @@ void citconlog2cvr( double *L, double *G, double *T, double *C, int &nrow, int &
 			while(aa && cc) {
 
 				// randomly permute residuals
-				random_shuffle( gresid.begin(), gresid.end(), randwrapper1a );
+			    shuffle( gresid.begin(), gresid.end(), std::default_random_engine(se) );	
 
 				// compute G* based on marginal L effects and permuted residuals
 				for(rw = 0; rw < nobs; rw++) {
